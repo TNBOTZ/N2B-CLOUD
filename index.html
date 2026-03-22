@@ -69,16 +69,14 @@
 <script src="js/payment.js"></script>
 
 <script>
-// show action buttons after login
-function showUserUI(userId) {
-  loginCard.style.display = "none";
-  uploadCard.style.display = "block";
-  searchCard.style.display = "block";
-  historyCard.style.display = "block";
-  actionCard.style.display = "block";
+async function checkUser() {
+  const { data } = await supabaseClient.auth.getUser();
 
-  loadFiles(userId);
-  checkAdmin(userId);
+  if (!data.user) {
+    window.location.href = "login.html";
+  } else {
+    showUserUI(data.user.id);
+  }
 }
 </script>
 
