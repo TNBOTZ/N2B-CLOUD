@@ -45,10 +45,20 @@ function saveToHistory(name, id) {
 function renderHistory() {
     const history = JSON.parse(localStorage.getItem('myVideos')) || [];
     const container = document.getElementById('historyList');
+    
     container.innerHTML = history.map(vid => `
-        <li>
-            <b>${vid.name}</b> (${vid.date}) 
-            <button onclick="window.open('${vid.link}')">Play</button>
+        <li class="history-item">
+            <div>
+                <b>${vid.name}</b><br>
+                <small>${vid.date}</small>
+            </div>
+            <div>
+                <a href="player.html?id=${vid.fileId}&name=${encodeURIComponent(vid.name)}" 
+                   class="btn-play" 
+                   style="text-decoration:none; display:inline-block; background:#28a745; padding:8px 15px; border-radius:8px; color:white;">
+                   Play & Download
+                </a>
+            </div>
         </li>
     `).join('');
 }
