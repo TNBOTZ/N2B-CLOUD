@@ -3,55 +3,22 @@ const multer = require('multer');
 const axios = require('axios');
 const FormData = require('form-data');
 const fs = require('fs');
-const app = express();
+const path = require('path');
 
+const app = express();
 const upload = multer({ dest: 'uploads/' });
-app.use(express.json());
+
 app.use(express.static('public'));
 
 // --- CONFIGURATION ---
-const BOT_TOKEN = '8703476678:AAHza1f1iGvykTF7YZBLtE62R3YVxoouVNI';
+const BOT_TOKEN = '8703476678:AAHza1f1iGvykTF7YZBLtE62R3YVxoouVNI'; 
 const CHAT_ID = '-1003882073026';
-// IMPORTANT: Use http://localhost:8081 for 2GB (Local Bot API Server)
-const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`; 
+// Point this to your Local Bot API Server for 2GB support
+const TELEGRAM_API = `http://localhost:8081/bot${BOT_TOKEN}`;
 
-// Temporary memory to track daily uploads without messing up your JSON
-let dailyTracker = {}; 
-
-// --- LOGIN ROUTE ---
-app.post('/api/login', (req, res) => {
-    const { username, password } = req.body;
-    const users = JSON.parse(fs.readFileSync('./users.json'));
-    const user = users.find(u => u.username === username && u.password === password);
-
-    if (user) {
-        res.json({ success: true, username: user.username, plan: user.plan });
-    } else {
-        res.status(401).json({ success: false, message: "Invalid credentials" });
-    }
-});
-
-// --- UPLOAD ROUTE ---
+// --- UPLOAD ROUTE (Open to everyone) ---
 app.post('/api/upload', upload.single('video'), async (req, res) => {
-    const { username } = req.body;
-    const users = JSON.parse(fs.readFileSync('./users.json'));
-    const user = users.find(u => u.username === username);
-
-    if (!user) return res.status(403).send("Unauthorized");
-
-    // Initialize tracker for the user if it's their first upload today
-    if (!dailyTracker[username]) dailyTracker[username] = 0;
-
-    const fileSizeGB = req.file.size / (1024 * 1024 * 1024);
-
-    // --- PLAN LOGIC ---
-    if (user.plan === 'free') {
-        if (dailyTracker[username] >= 5) return res.json({ success: false, error: "Daily limit of 5 reached!" });
-        if (fileSizeGB > 1) return res.json({ success: false, error: "Free plan limit is 1GB!" });
-    } else {
-        // Pro Plan
-        if (fileSizeGB > 2) return res.json({ success: false, error: "Max limit is 2GB!" });
-    }
+    if (!req.file) return res.status(400).json({ success: false, error: "No file" });
 
     try {
         const form = new FormData();
@@ -64,29 +31,20 @@ app.post('/api/upload', upload.single('video'), async (req, res) => {
             maxBodyLength: Infinity
         });
 
-        // Update Tracker & Cleanup
-        dailyTracker[username]++;
         fs.unlinkSync(req.file.path);
-
         res.json({ 
             success: true, 
             file_id: response.data.result.video.file_id,
             file_name: req.file.originalname 
         });
     } catch (err) {
-        res.json({ success: false, error: "Telegram Upload Failed" });
+        res.status(500).json({ success: false, error: "Upload failed" });
     }
 });
 
-app.listen(3000, () => console.log("Server running on port 3000"));
+// --- STREAMING ROUTE ---
+app.get('/stream/:file_id', async (req, res) => {
+    // ... keep the same streaming logic from before ...
+});
 
-// ... inside your app.get('/stream/:file_id') ...
-
-const head = {
-    'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-    'Accept-Ranges': 'bytes',
-    'Content-Length': chunksize,
-    'Content-Type': 'video/mp4',
-    // ADD THIS LINE to allow the browser to suggest a filename during download
-    'Content-Disposition': 'attachment; filename="video.mp4"' 
-};
+app.listen(3000, () => console.log("🚀 Server running on http://localhost:3000"));
