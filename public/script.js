@@ -1,17 +1,17 @@
-
-
 // --- UPLOAD FUNCTION ---
 async function uploadVideo() {
     const fileInput = document.getElementById('videoInput');
-    const status = document.getElementById('statusMessage');
-    
+    const status = document.getElementById('statusMsg');
+    const progBar = document.getElementById('progBar');
+    const progCont = document.getElementById('progCont');
+
     if (!fileInput.files[0]) return alert("Select a file!");
 
     const formData = new FormData();
     formData.append('video', fileInput.files[0]);
-    formData.append('username', user.username); // Send username for plan check
 
-    status.textContent = "Processing upload...";
+    progCont.style.display = 'block';
+    status.textContent = "Uploading to Telegram Cloud...";
 
     try {
         const response = await fetch('/api/upload', { method: 'POST', body: formData });
@@ -20,20 +20,22 @@ async function uploadVideo() {
         if (result.success) {
             status.textContent = "✅ Upload Successful!";
             saveToHistory(result.file_name, result.file_id);
+            setTimeout(() => switchTab('historyTab'), 1500);
         } else {
-            status.textContent = "❌ " + result.error;
+            status.textContent = "❌ Error: " + result.error;
         }
     } catch (e) {
-        status.textContent = "❌ Server Error";
+        status.textContent = "❌ Server Connection Error";
     }
 }
 
-// --- HISTORY LOGIC ---
 function saveToHistory(name, id) {
     let history = JSON.parse(localStorage.getItem('myVideos')) || [];
-    // Creating the unique link through your server
-    const link = `${window.location.origin}/play/${id}`; 
-    history.unshift({ name, link, date: new Date().toLocaleDateString() });
+    history.unshift({ 
+        name, 
+        fileId: id, 
+        date: new Date().toLocaleDateString() 
+    });
     localStorage.setItem('myVideos', JSON.stringify(history));
 }
 
@@ -43,39 +45,13 @@ function renderHistory() {
     
     container.innerHTML = history.map(vid => `
         <li class="history-item">
-            <div>
-                <b>${vid.name}</b><br>
-                <small>${vid.date}</small>
-            </div>
-            <div>
-                <a href="player.html?id=${vid.fileId}&name=${encodeURIComponent(vid.name)}" 
-                   class="btn-play" 
-                   style="text-decoration:none; display:inline-block; background:#28a745; padding:8px 15px; border-radius:8px; color:white;">
-                   Play & Download
-                </a>
-            </div>
+            <b>${vid.name}</b>
+            <a href="player.html?id=${vid.fileId}&name=${encodeURIComponent(vid.name)}" class="btn-play">
+                Play / Download
+            </a>
         </li>
     `).join('');
 }
-  // Function to show filename after selection
-function handleFileSelect() {
-    const file = document.getElementById('videoInput').files[0];
-    const status = document.getElementById('statusMsg');
-    const btn = document.getElementById('startUploadBtn');
-    
-    if(file) {
-        status.textContent = `Selected: ${file.name} (${(file.size/(1024*1024)).toFixed(2)} MB)`;
-        btn.style.display = 'inline-block';
-    }
-}
 
-// Function to handle tab switching visually
-function switchTab(tabId, btnElement) {
-    document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    
-    document.getElementById(tabId).style.display = 'block';
-    if(btnElement) btnElement.classList.add('active');
-    
-    if(tabId === 'historyTab') renderHistory();
-}
+// Initial Load
+document.addEventListener('DOMContentLoaded', renderHistory);
