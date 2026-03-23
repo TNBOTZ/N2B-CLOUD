@@ -175,29 +175,6 @@
         </div>
     </div>
 
-    <script>
-  // Function to show filename after selection
-function handleFileSelect() {
-    const file = document.getElementById('videoInput').files[0];
-    const status = document.getElementById('statusMsg');
-    const btn = document.getElementById('startUploadBtn');
-    
-    if(file) {
-        status.textContent = `Selected: ${file.name} (${(file.size/(1024*1024)).toFixed(2)} MB)`;
-        btn.style.display = 'inline-block';
-    }
-}
-
-// Function to handle tab switching visually
-function switchTab(tabId, btnElement) {
-    document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    
-    document.getElementById(tabId).style.display = 'block';
-    if(btnElement) btnElement.classList.add('active');
-    
-    if(tabId === 'historyTab') renderHistory();
-}
-  </script>
+    <script src="script.js"> </script>
 </body>
 </html>
